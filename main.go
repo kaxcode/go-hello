@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"os"
 	"strings"
-	"sync"
 )
 
 type proverb struct {
@@ -44,34 +43,32 @@ func main() {
 		os.Exit(1)
 	}
 
-	mu := sync.Mutex{}
-	var wg sync.WaitGroup
-
+	ch := make(chan *proverb)
+	go printProverbs(ch)
 	for _, p := range proverbs {
-		wg.Add(1)
-		go func(p *proverb) {
-			defer wg.Done()
-			mu.Lock()
-			fmt.Printf("%s\n", p.line)
-			for k, v := range p.charCount() {
-				fmt.Printf("'%c'=%d, ", k, v)
-			}
-			fmt.Print("\n\n")
-			mu.Unlock()
-		}(p)
+		ch <- p
 	}
-
-	wg.Wait()
+	close(ch)
 }
 
 func pathFromFlag() string {
-	path := flag.String("rawr", "", "file flag")
+	path := flag.String("f", "", "file flag")
 	flag.Parse()
 	return *path
 }
 
 func pathFromEnv() string {
 	return os.Getenv("FILE")
+}
+
+func printProverbs(pc chan *proverb) {
+	for p := range pc {
+		fmt.Printf("%s\n", p.line)
+		for k, v := range p.charCount() {
+			fmt.Printf("'%c'=%d, ", k, v)
+		}
+		fmt.Print("\n\n")
+	}
 }
 
 func loadProverbs(path string) ([]*proverb, error) {
