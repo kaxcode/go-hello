@@ -43,12 +43,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	ch := make(chan *proverb)
-	go printProverbs(ch)
 	for _, p := range proverbs {
-		ch <- p
+		fmt.Printf("%s\n", p.line)
+		for k, v := range p.charCount() {
+			fmt.Printf("'%c'=%d, ", k, v)
+		}
+		fmt.Print("\n\n")
 	}
-	close(ch)
 }
 
 func pathFromFlag() string {
@@ -59,16 +60,6 @@ func pathFromFlag() string {
 
 func pathFromEnv() string {
 	return os.Getenv("FILE")
-}
-
-func printProverbs(pc chan *proverb) {
-	for p := range pc {
-		fmt.Printf("%s\n", p.line)
-		for k, v := range p.charCount() {
-			fmt.Printf("'%c'=%d, ", k, v)
-		}
-		fmt.Print("\n\n")
-	}
 }
 
 func loadProverbs(path string) ([]*proverb, error) {
